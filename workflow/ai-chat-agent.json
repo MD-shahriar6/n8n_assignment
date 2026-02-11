@@ -1,0 +1,285 @@
+{
+  "name": "MeetSync",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -672,
+        -112
+      ],
+      "id": "52f9f1c8-45f1-4882-80cb-5af05d0786da",
+      "name": "When chat message received",
+      "webhookId": "6065d902-8c83-4145-bacc-1af93dd57968"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Current time: {{ $now }}\n\nUser Message:  {{ $json.body.chatInput }}",
+        "options": {
+          "systemMessage": "You are \"John's Personal AI Assistant.\" Your task is to help users schedule meetings with John efficiently. Follow these rules carefully:\n\n1. Greet the user politely.\n2. Ask the user for their full name and email address.\n3. Use the tool `fetch_events_from_calender` to get John's events for the next 2 days.\n4. Identify 2 available time slots on the NEXT day for a meeting.\n5. Present these 2 available time slots to the user.\n6. Ask the user to choose one of the offered time slots and provide a meeting agenda.\n7. Once the user responds, create the meeting by calling the `create_a_meeting` tool with the following information:\n   - User's name\n   - User's email\n   - Chosen time slot\n   - Meeting agenda\n8. Confirm to the user that the meeting has been successfully scheduled.\n9. Be polite, concise, and professional throughout the conversation.\n10. Only use the two available tools: `fetch_events_from_calender` and `create_a_meeting`. Do not make up calendar information or times.\n\nAlways validate the user's input before proceeding to the next step.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -16,
+        -128
+      ],
+      "id": "f7e46a52-fd1c-4c8b-8bfa-cdac82944a56",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama3.3:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        64
+      ],
+      "id": "9c170942-d3cb-4ba2-8ac5-a17608bda4b2",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "Jcs4kzjKkAVN53Ex",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "{{ $json.body.sessionID }}",
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -16,
+        64
+      ],
+      "id": "04f03805-4711-4c7e-b694-98d0645b5848",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "invoicescrapping@gmail.com",
+          "mode": "list",
+          "cachedResultName": "invoicescrapping@gmail.com"
+        },
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        80
+      ],
+      "id": "3a5abc6d-44f1-4c49-af9c-9453c664645a",
+      "name": "fetch_events_from_calender",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "xbQ2caIckqfvs3EL",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "invoicescrapping@gmail.com",
+          "mode": "list",
+          "cachedResultName": "invoicescrapping@gmail.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('attendees0_Attendees', ``, 'string') }}"
+          ],
+          "conferenceDataUi": {
+            "conferenceDataValues": {
+              "conferenceSolution": "hangoutsMeet"
+            }
+          },
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        304,
+        32
+      ],
+      "id": "0eeb3248-580f-47fc-9f4b-d3abed299307",
+      "name": "create_a_meeting",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "xbQ2caIckqfvs3EL",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "f85204fb-9fd0-42b8-946c-26ac99c03a08",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        -128
+      ],
+      "id": "fb28ed6b-b6c6-47be-89cb-73b52f4ea3e1",
+      "name": "Webhook",
+      "webhookId": "f85204fb-9fd0-42b8-946c-26ac99c03a08"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        400,
+        -128
+      ],
+      "id": "f44e3107-f5c3-49f8-9883-049143ac3a0d",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "localhost:5678",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate",
+            "connection": "keep-alive",
+            "user-agent": "python-httpx/0.28.1",
+            "content-length": "51",
+            "content-type": "application/json"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "sessionID": "radom_session_id_1",
+            "chatInput": "hi"
+          },
+          "webhookUrl": "http://localhost:5678/webhook/f85204fb-9fd0-42b8-946c-26ac99c03a08",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When chat message received": {
+      "main": [
+        []
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fetch_events_from_calender": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "create_a_meeting": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Dhaka",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "63fc45cb-5158-4dc8-ab17-1698f5d7e278",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f2df7db8a8a4464f36fd8302c4280c595c8a3311e2110cac1431466b1834230d"
+  },
+  "id": "7DuErzKESqlEsVxf-ga9X",
+  "tags": []
+}
