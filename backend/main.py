@@ -3,47 +3,63 @@ from pydantic import BaseModel
 import httpx
 from dotenv import load_dotenv
 import os
+import uuid
 
 # Load environment variables
 load_dotenv()
 
 app = FastAPI(title="n8n AI Agent Proxy")
 
-# Define the input schema
+# Input schema
 class ChatRequest(BaseModel):
-    sessionId: str
-    chatInput: str
+    email: str
+    article_url: str
 
-# n8n Webhook URL - loaded from environment variable
-WEBHOOK_URL = os.getenv("WEBHOOK_URL", "http://localhost:5678/webhook/f85204fb-9fd0-42b8-946c-26ac99c03a08")
+# n8n Webhook URL
+WEBHOOK_URL = os.getenv(
+    "WEBHOOK_URL",
+    "http://localhost:5678/webhook/f85204fb-9fd0-42b8-946c-26ac99c03a08"
+)
 
-@app.post("/chat")
-async def chat_endpoint(request: ChatRequest):
-    """
-    Receives sessionId and chatInput, forwards to n8n, 
-    and returns the agent's response.
-    """
+@app.post("/process-article")
+async def process_article(request: ChatRequest):
+
+    # Generate session ID
+    session_id = str(uuid.uuid4())
+
     payload = {
-        "sessionId": request.sessionId,
-        "chatInput": request.chatInput
+        "session_id": session_id,
+        "email": request.email,
+        "article_url": request.article_url
     }
 
     async with httpx.AsyncClient() as client:
         try:
-            # Forwarding the request to n8n
-            response = await client.post(WEBHOOK_URL, json=payload, timeout=60.0)
-            
-            # Check if n8n returned a successful status
+            response = await client.post(
+                WEBHOOK_URL,
+                json=payload,
+                timeout=60.0
+            )
+
             response.raise_for_status()
-            
-            # Return the JSON response directly from n8n
-            # This matches your requirement: {{ $node["Respond to Webhook"].json }}
-            return response.json()
+
+            return {
+                "message": "Request sent to n8n successfully",
+                "session_id": session_id,
+                "n8n_response": response.json()
+            }
 
         except httpx.HTTPStatusError as e:
-            raise HTTPException(status_code=e.response.status_code, detail=f"n8n Error: {e.response.text}")
+            raise HTTPException(
+                status_code=e.response.status_code,
+                detail=f"n8n Error: {e.response.text}"
+            )
+
         except httpx.RequestError as e:
-            raise HTTPException(status_code=500, detail=f"Connection to n8n failed: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Connection to n8n failed: {str(e)}"
+            )
 
 if __name__ == "__main__":
     import uvicorn
